@@ -372,3 +372,26 @@ Resources:
       Tags:
         - Key: Name
           Value: efs-cmk
+
+  Efs:
+    Type: AWS::EFS::FileSystem
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BackupPolicy:
+        Status: DISABLED
+      Encrypted: true
+      KmsKeyId: !Ref Cmk
+      PerformanceMode: generalPurpose
+      ThroughputMode: elastic
+      FileSystemTags:
+        - Key: Name
+          Value: efs-filesystem
+
+  MntTarget:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref Efs
+      SecurityGroups:
+        - !Ref EfsSg
+      SubnetId: !Ref PrivateSubnet1a
