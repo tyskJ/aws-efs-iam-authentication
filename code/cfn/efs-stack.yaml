@@ -1,0 +1,355 @@
+# ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+# ║ EFS IAM Authentication Stack - CloudFormation Template                                                                                           ║
+# ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "EFS IAM Authentication Stack."
+Transform:
+  - "AWS::LanguageExtensions"
+
+Metadata:
+  AWS::Cloudformation::Interface:
+    ParameterGroups:
+      - Label:
+          default: NW Settings.
+        Parameters:
+          - VpcCidr
+          - PublicSubnet1aCidr
+          - PrivateSubnet1aCidr
+      - Label:
+          default: EC2 Settings.
+        Parameters:
+          - AmiId
+          - InstanceType
+          - RootVolumeSize
+
+# ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+# ║ EFS IAM Authentication Stack - CloudFormation Template Parameters                                                                                ║
+# ╠═══════════════════════════════════════╤═════════════════════════════════════════════════╤════════════════════════════════════════════════════════╣
+# ║ VpcCidr                               │ String                                          │ VPC Cidr.                                              ║
+# ║ PublicSubnet1aCidr                    │ String                                          │ Public Subnet AZ-A Cidr.                               ║
+# ║ PrivateSubnet1aCidr                   │ String                                          │ Private Subnet AZ-A Cidr.                              ║
+# ║ AmiId                                 │ AWS::EC2::Image::Id                             │ Ubuntus 24.04 Ami ID.                                  ║
+# ║ InstanceType                          │ String                                          │ Instance Type.                                         ║
+# ║ RootVolumeSize                        │ Number                                          │ RootVolumeSize.                                        ║
+# ╚═══════════════════════════════════════╧═════════════════════════════════════════════════╧════════════════════════════════════════════════════════╝
+Parameters:
+  VpcCidr:
+    Description: VPC Cidr
+    Type: String
+
+  PublicSubnet1aCidr:
+    Description: Public Subnet AZ-A Cidr
+    Type: String
+
+  PrivateSubnet1aCidr:
+    Description: Private Subnet AZ-A Cidr
+    Type: String
+
+  AmiId:
+    Description: Ubuntu 24.04 AMI ID.
+    Type: AWS::EC2::Image::Id
+
+  InstanceType:
+    Description: EC2 Instance Type.
+    Type: String
+
+  RootVolumeSize:
+    Description: EC2 Instance Root Volume Size.
+    Type: Number
+
+# ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+# ║ EFS IAM Authentication Stack - CloudFormation Template Mappings                                                                                  ║
+# ╠═════════════════════╤════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+# ║ VpcParams           │ VPC Paramters.                                                                                                             ║
+# ║ IgwParams           │ Internet Gateway Paramters.                                                                                                ║
+# ║ SubnetParams        │ Subnet Paramters.                                                                                                          ║
+# ║ NaclParams          │ NACL Paramters.                                                                                                            ║
+# ║ RtbParams           │ RouteTable Paramters.                                                                                                      ║
+# ║ IamParams           │ IAM Paramters.                                                                                                             ║
+# ║ SgParams            │ SecurityGroup Paramters.                                                                                                   ║
+# ║ KeyPairParams       │ KeyPair Paramters.                                                                                                         ║
+# ║ Ec2Params           │ EC2 Instance Paramters.                                                                                                    ║
+# ╚═════════════════════╧════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+Mappings:
+  VpcParams:
+    VpcType:
+      Name: vpc
+      DnsHost: true
+      DnsSupport: true
+      Cidr: VpcCidr
+  IgwParams:
+    IgwType:
+      Name: igw
+  SubnetParams:
+    PublicSubnet1a:
+      Name: public-subnet-a
+      Cidr: PublicSubnet1aCidr
+    PrivateSubnet1a:
+      Name: private-subnet-a
+      Cidr: PrivateSubnet1aCidr
+  NaclParams:
+    NaclType:
+      Name: nacl
+    Association:
+      AssocSubnet1: PublicSubnet1a
+      AssocSubnet2: PrivateSubnet1a
+  RtbParams:
+    RtbType:
+      RtbPublic: public-rtb
+      RtbPrivate: private-rtb
+    PublicAssociation:
+      RtbAssocPublicSubnet1: PublicSubnet1a
+    PrivateAssociation:
+      RtbAssocPrivateSubnet1: PrivateSubnet1a
+  IamParams:
+    IamType:
+      Description: IAM Role for EC2 Instance.
+      Name: iam-role-ec2
+  SgParams:
+    SgType:
+      Ec2Sg: ec2-sg
+      EfsSg: efs-sg
+  KeyPairParams:
+    KeyPairType:
+      Name: keypair
+  Ec2Params:
+    Instance1:
+      Name: ec2-instance
+      AmiId: AmiId
+      InstanceType: InstanceType
+      RootVolumeSize: RootVolumeSize
+      SgName: Ec2Sg
+      SubnetName: PublicSubnet1a
+      DeviceName: /dev/xvda
+      KeyPairName: KeyPair
+
+# ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+# ║ EFS IAM Authentication Stack - CloudFormation Template Resources                                                                                 ║
+# ╠═════════════════════════════════════╤═══════════════════════════════════════════╤════════════════════════════════════════════════════════════════╣
+# ║ Vpc                                 │ AWS::EC2::VPC                             │ VPC.                                                           ║
+# ║ Igw                                 │ AWS::EC2::InternetGateway                 │ InternetGateway.                                               ║
+# ║ IgwAttach                           │ AWS::EC2::VPCGatewayAttachment            │ InternetGateway Attachment.                                    ║
+# ║ PublicSubnet1a                      │ AWS::EC2::Subnet                          │ Public Subnet AZ-A.                                            ║
+# ║ PrivateSubnet1a                     │ AWS::EC2::Subnet                          │ Private Subnet AZ-A.                                           ║
+# ║ Nacl                                │ AWS::EC2::NetworkAcl                      │ All Allow NACL.                                                ║
+# ║ NaclInEntry100                      │ AWS::EC2::NetworkAclEntry                 │ All Allow Inbound Entry.                                       ║
+# ║ NaclOutEntry100                     │ AWS::EC2::NetworkAclEntry                 │ All Allow Outbound Entry.                                      ║
+# ║ AssocSubnet1                        │ AWS::EC2::SubnetNetworkAclAssociation     │ NACL Association.                                              ║
+# ║ AssocSubnet2                        │ AWS::EC2::SubnetNetworkAclAssociation     │ NACL Association.                                              ║
+# ║ RtbPublic                           │ AWS::EC2::RouteTable                      │ Public Subnet RouteTable.                                      ║
+# ║ RtbPrivate                          │ AWS::EC2::RouteTable                      │ Private Subnet RouteTable.                                     ║
+# ║ RtbAssocPublicSubnet1               │ AWS::EC2::SubnetRouteTableAssociation     │ RouteTable Association Public Subnet.                          ║
+# ║ RtbAssocPrivateSubnet1              │ AWS::EC2::SubnetRouteTableAssociation     │ RouteTable Association Private Subnet.                         ║
+# ║ RtbPublicEntry1                     │ AWS::EC2::Route                           │ RouteTable Entry 1.                                            ║
+# ║ Role                                │ AWS::IAM::Role                            │ EC2 IAM Role.                                                  ║
+# ║ InstanceProfile                     │ AWS::IAM::InstanceProfile                 │ EC2 IAM InstanceProfile.                                       ║
+# ║ Ec2Sg                               │ AWS::EC2::SecurityGroup                   │ EC2 SecurityGroup.                                             ║
+# ║ KeyPair                             │ AWS::EC2::KeyPair                         │ KeyPair.                                                       ║
+# ║ Ec2Instance                         │ AWS::EC2::Instance                        │ EC2 Instance.                                                  ║
+# ╚═════════════════════════════════════╧═══════════════════════════════════════════╧════════════════════════════════════════════════════════════════╝
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref
+        "Fn::FindInMap": [VpcParams, VpcType, Cidr]
+      EnableDnsHostnames: !FindInMap [VpcParams, VpcType, DnsHost]
+      EnableDnsSupport: !FindInMap [VpcParams, VpcType, DnsSupport]
+      Tags:
+        - Key: Name
+          Value: !FindInMap [VpcParams, VpcType, Name]
+
+  Igw:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !FindInMap [IgwParams, IgwType, Name]
+
+  IgwAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref Igw
+
+  "Fn::ForEach::SubnetAzA":
+    - SubnetType
+    - [PublicSubnet1a, PrivateSubnet1a]
+    - ${SubnetType}:
+        Type: AWS::EC2::Subnet
+        Properties:
+          VpcId: !Ref Vpc
+          CidrBlock: !Ref
+            "Fn::FindInMap": [SubnetParams, !Ref SubnetType, Cidr]
+          AvailabilityZone: !Sub ${AWS::Region}a
+          Tags:
+            - Key: Name
+              Value: !FindInMap [SubnetParams, !Ref SubnetType, Name]
+
+  Nacl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !FindInMap [NaclParams, NaclType, Name]
+
+  NaclInEntry100:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: false
+      RuleNumber: 100
+      RuleAction: allow
+      Protocol: -1
+      CidrBlock: 0.0.0.0/0
+      NetworkAclId: !Ref Nacl
+
+  NaclOutEntry100:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: true
+      RuleNumber: 100
+      RuleAction: allow
+      Protocol: -1
+      CidrBlock: 0.0.0.0/0
+      NetworkAclId: !Ref Nacl
+
+  "Fn::ForEach::NaclAssociation":
+    - SubnetAssocNacl
+    - [AssocSubnet1, AssocSubnet2]
+    - ${SubnetAssocNacl}:
+        Type: AWS::EC2::SubnetNetworkAclAssociation
+        Properties:
+          SubnetId: !Ref
+            "Fn::FindInMap": [NaclParams, Association, !Ref SubnetAssocNacl]
+          NetworkAclId: !Ref Nacl
+
+  "Fn::ForEach::RouteTable":
+    - RtbVariable
+    - [RtbPublic, RtbPrivate]
+    - ${RtbVariable}:
+        Type: AWS::EC2::RouteTable
+        Properties:
+          VpcId: !Ref Vpc
+          Tags:
+            - Key: Name
+              Value: !FindInMap [RtbParams, RtbType, !Ref RtbVariable]
+
+  "Fn::ForEach::RtbAssocPublicSubnet":
+    - AssocVariable
+    - [RtbAssocPublicSubnet1]
+    - ${AssocVariable}:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+          RouteTableId: !Ref RtbPublic
+          SubnetId: !Ref
+            "Fn::FindInMap": [RtbParams, PublicAssociation, !Ref AssocVariable]
+
+  "Fn::ForEach::RtbAssocPrivateSubnet":
+    - AssocVariable
+    - [RtbAssocPrivateSubnet1]
+    - ${AssocVariable}:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+          RouteTableId: !Ref RtbPrivate
+          SubnetId: !Ref
+            "Fn::FindInMap": [RtbParams, PrivateAssociation, !Ref AssocVariable]
+
+  RtbPublicEntry1:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref RtbPublic
+      GatewayId: !Ref Igw
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !FindInMap [IamParams, IamType, Description]
+      RoleName: !FindInMap [IamParams, IamType, Name]
+      AssumeRolePolicyDocument:
+        {
+          "Version": "2012-10-17",
+          "Statement":
+            [
+              {
+                "Effect": "Allow",
+                "Principal": { "Service": ["ec2.amazonaws.com"] },
+                "Action": "sts:AssumeRole",
+              },
+            ],
+        }
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags:
+        - Key: Name
+          Value: !FindInMap [IamParams, IamType, Name]
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref Role
+      InstanceProfileName: !FindInMap [IamParams, IamType, Name]
+
+  "Fn::ForEach::SecurityGroup":
+    - SgVariable
+    - [Ec2Sg, EfsSg]
+    - ${SgVariable}:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+          GroupDescription: !Ref SgVariable
+          GroupName: !FindInMap [SgParams, SgType, !Ref SgVariable]
+          VpcId: !Ref Vpc
+          Tags:
+            - Key: Name
+              Value: !FindInMap [SgParams, SgType, !Ref SgVariable]
+
+  EfsSgIngress01:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow NFS from EC2 SG.
+      GroupId: !Ref EfsSg
+      IpProtocol: tcp
+      FromPort: 2049
+      ToPort: 2049
+      SourceSecurityGroupId: !Ref Ec2Sg
+
+  KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !FindInMap [KeyPairParams, KeyPairType, Name]
+      KeyType: rsa
+      KeyFormat: pem
+      Tags:
+        - Key: Name
+          Value: !FindInMap [KeyPairParams, KeyPairType, Name]
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: !FindInMap [Ec2Params, Instance1, DeviceName]
+          Ebs:
+            DeleteOnTermination: true
+            Encrypted: true
+            VolumeSize: !Ref
+              "Fn::FindInMap": [Ec2Params, Instance1, RootVolumeSize]
+            VolumeType: gp3
+      DisableApiTermination: false
+      EbsOptimized: false
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref
+        "Fn::FindInMap": [Ec2Params, Instance1, AmiId]
+      InstanceType: !Ref
+        "Fn::FindInMap": [Ec2Params, Instance1, InstanceType]
+      KeyName: !Ref
+        "Fn::FindInMap": [Ec2Params, Instance1, KeyPairName]
+      SecurityGroupIds:
+        - !Ref
+          "Fn::FindInMap": [Ec2Params, Instance1, SgName]
+      SubnetId: !Ref
+        "Fn::FindInMap": [Ec2Params, Instance1, SubnetName]
+      Tags:
+        - Key: Name
+          Value: !FindInMap [Ec2Params, Instance1, Name]
