@@ -146,6 +146,9 @@ Mappings:
 # ║ Ec2Sg                               │ AWS::EC2::SecurityGroup                   │ EC2 SecurityGroup.                                             ║
 # ║ KeyPair                             │ AWS::EC2::KeyPair                         │ KeyPair.                                                       ║
 # ║ Ec2Instance                         │ AWS::EC2::Instance                        │ EC2 Instance.                                                  ║
+# ║ Cmk                                 │ AWS::EFS::FileSystem                      │ EFS FileSystem.                                                ║
+# ║ Efs                                 │ AWS::EFS::FileSystem                      │ EFS FileSystem.                                                ║
+# ║ MntTarget                           │ AWS::EFS::MountTarget                     │ EFS MountTarget.                                               ║
 # ╚═════════════════════════════════════╧═══════════════════════════════════════════╧════════════════════════════════════════════════════════════════╝
 Resources:
   Vpc:
@@ -353,3 +356,19 @@ Resources:
       Tags:
         - Key: Name
           Value: !FindInMap [Ec2Params, Instance1, Name]
+
+  Cmk:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      Description: EFS CMK
+      Enabled: true
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      MultiRegion: false
+      PendingWindowInDays: 7
+      Tags:
+        - Key: Name
+          Value: efs-cmk
