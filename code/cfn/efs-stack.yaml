@@ -84,9 +84,11 @@ Mappings:
     PublicSubnet1a:
       Name: public-subnet-a
       Cidr: PublicSubnet1aCidr
+      AutoAssignIp: true
     PrivateSubnet1a:
       Name: private-subnet-a
       Cidr: PrivateSubnet1aCidr
+      AutoAssignIp: false
   NaclParams:
     NaclType:
       Name: nacl
@@ -185,6 +187,8 @@ Resources:
           CidrBlock: !Ref
             "Fn::FindInMap": [SubnetParams, !Ref SubnetType, Cidr]
           AvailabilityZone: !Sub ${AWS::Region}a
+          MapPublicIpOnLaunch:
+            !FindInMap [SubnetParams, !Ref SubnetType, AutoAssignIp]
           Tags:
             - Key: Name
               Value: !FindInMap [SubnetParams, !Ref SubnetType, Name]
