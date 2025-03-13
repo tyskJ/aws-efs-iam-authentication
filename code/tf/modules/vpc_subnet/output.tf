@@ -8,15 +8,15 @@
 
 output "subnets" {
   description = "Subnet List Map."
-  value = aws_subnet.subnet
+  value       = aws_subnet.subnet
 }
 
 output "ec2_sg_id" {
   description = "SG ID for EC2."
-  value = aws_security_group.ec2_sg.id
+  value       = aws_security_group.ec2_sg.id
 }
 
 output "efs_sg_id" {
   description = "SG ID for EFS."
-  value = aws_security_group.efs_sg.id
+  value       = aws_security_group.efs_sg.id
 }
