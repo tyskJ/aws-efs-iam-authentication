@@ -14,6 +14,9 @@
 # ║ assoc_rtb_pri1                     │ aws_route_table_association                         │ RouteTable Association Subnet.                        ║
 # ║ ec2_sg                             │ aws_security_group                                  │ Security Group for EC2.                               ║
 # ║ efs_sg                             │ aws_security_group                                  │ Security Group for EFS.                               ║
+# ║ ec2_sg_out1                        │ aws_security_group_rule                             │ Security Group unrestricted outboud rule.             ║
+# ║ efs_sg_in1                         │ aws_security_group_rule                             │ Security Group tcp/2049 inboud rule from EC2 SG.      ║
+# ║ efs_sg_out1                        │ aws_security_group_rule                             │ Security Group unrestricted outboud rule.             ║
 # ╚════════════════════════════════════╧═════════════════════════════════════════════════════╧═══════════════════════════════════════════════════════╝
 
 resource "aws_vpc" "vpc" {
@@ -118,4 +121,34 @@ resource "aws_security_group" "efs_sg" {
   tags = {
     Name = "efs-sg"
   }
+}
+
+resource "aws_security_group_rule" "ec2_sg_out1" {
+  description       = "Security Group unrestricted outboud rule."
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.ec2_sg.id
+}
+
+resource "aws_security_group_rule" "efs_sg_in1" {
+  description              = "Security Group tcp/2049 inboud rule from EC2 SG."
+  type                     = "ingress"
+  from_port                = 2049
+  to_port                  = 2049
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.ec2_sg.id
+  security_group_id        = aws_security_group.efs_sg.id
+}
+
+resource "aws_security_group_rule" "efs_sg_out1" {
+  description       = "Security Group unrestricted outboud rule."
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.efs_sg.id
 }
