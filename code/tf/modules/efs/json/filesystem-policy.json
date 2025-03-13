@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowEFSAccess",
+      "Effect": "Allow",
+      "Principal": { "AWS": "${Ec2RoleArn}" },
+      "Action": [
+        "elasticfilesystem:ClientRootAccess",
+        "elasticfilesystem:ClientWrite",
+        "elasticfilesystem:ClientMount"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "Bool": { "elasticfilesystem:AccessedViaMountTarget": "true" }
+      }
+    },
+    {
+      "Sid": "DenyNotTls",
+      "Effect": "Deny",
+      "Principal": { "AWS": "*" },
+      "Action": "*",
+      "Resource": "*",
+      "Condition": { "Bool": { "aws:SecureTransport": "false" } }
+    }
+  ]
+}

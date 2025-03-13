@@ -5,6 +5,7 @@
 # ║ iam             │ ../modules/iam                    │ invoke IAM module.                                                                         ║
 # ║ kms             │ ../modules/kms                    │ invoke KMS module.                                                                         ║
 # ║ ec2             │ ../modules/ec2                    │ invoke EC2 module.                                                                         ║
+# ║ efs             │ ../modules/efs                    │ invoke EFS module.                                                                         ║
 # ╚═════════════════╧═══════════════════════════════════╧════════════════════════════════════════════════════════════════════════════════════════════╝
 
 module "nw" {
@@ -32,4 +33,13 @@ module "ec2" {
   ec2_sg_id            = module.nw.ec2_sg_id
   subnet_id            = module.nw.subnets["public-subnet-a"].id
   ec2_map              = { "name" = "ec2", "instancetype" = "t3.large", "volname" = "ebs-root", "volumesize" = "30", "ami" = "ami-0a290015b99140cd1" }
+}
+
+module "efs" {
+  source = "../modules/efs"
+
+  efs_sg_id = module.nw.efs_sg_id
+  subnet_id = module.nw.subnets["private-subnet-a"].id
+  cmk_arn   = module.kms.efs_cmk_arn
+  ec2_role_arn = module.iam.ec2_role_arn
 }
