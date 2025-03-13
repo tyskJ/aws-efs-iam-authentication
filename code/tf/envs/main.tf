@@ -3,6 +3,8 @@
 # ╠═════════════════╤═══════════════════════════════════╤════════════════════════════════════════════════════════════════════════════════════════════╣
 # ║ nw              │ ../modules/vpc_subnet             │ invoke vpc subnet module.                                                                  ║
 # ║ iam             │ ../modules/iam                    │ invoke IAM module.                                                                         ║
+# ║ kms             │ ../modules/kms                    │ invoke KMS module.                                                                         ║
+# ║ ec2             │ ../modules/ec2                    │ invoke EC2 module.                                                                         ║
 # ╚═════════════════╧═══════════════════════════════════╧════════════════════════════════════════════════════════════════════════════════════════════╝
 
 module "nw" {
@@ -17,4 +19,17 @@ module "iam" {
   source = "../modules/iam"
 
   partition = local.partition_name
+}
+
+module "kms" {
+  source = "../modules/kms"
+}
+
+module "ec2" {
+  source = "../modules/ec2"
+
+  instanceprofile_name = module.iam.instanceprofile_name
+  ec2_sg_id            = module.nw.ec2_sg_id
+  subnet_id            = module.nw.subnets["public-subnet-a"].id
+  ec2_map              = { "name" = "ec2", "instancetype" = "t3.large", "volname" = "ebs-root", "volumesize" = "30", "ami" = "ami-0a290015b99140cd1" }
 }
