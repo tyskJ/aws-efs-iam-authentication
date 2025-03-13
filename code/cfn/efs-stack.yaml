@@ -151,6 +151,7 @@ Mappings:
 # ║ Cmk                                 │ AWS::EFS::FileSystem                      │ EFS FileSystem.                                                ║
 # ║ Efs                                 │ AWS::EFS::FileSystem                      │ EFS FileSystem.                                                ║
 # ║ MntTarget                           │ AWS::EFS::MountTarget                     │ EFS MountTarget.                                               ║
+# ║ AccessPoint                         │ AWS::EFS::AccessPoint                     │ EFS AccessPoint.                                               ║
 # ╚═════════════════════════════════════╧═══════════════════════════════════════════╧════════════════════════════════════════════════════════════════╝
 Resources:
   Vpc:
@@ -431,3 +432,20 @@ Resources:
       SecurityGroups:
         - !Ref EfsSg
       SubnetId: !Ref PrivateSubnet1a
+
+  AccessPoint:
+    Type: AWS::EFS::AccessPoint
+    Properties:
+      FileSystemId: !Ref Efs
+      PosixUser:
+        Uid: "1001"
+        Gid: "1001"
+      RootDirectory:
+        Path: "/App"
+        CreationInfo:
+          OwnerUid: "1001"
+          OwnerGid: "1001"
+          Permissions: "0755"
+      AccessPointTags:
+        - Key: Name
+          Value: efs-access-point
