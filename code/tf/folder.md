@@ -22,6 +22,8 @@
         |   `-- variable.tf                       変数定義ファイル
         |-- efs                                 EFSモジュール
         |   |-- data.tf                           外部データソース定義ファイル
+        |   |-- json                              ファイルシステムポリシーSONファイル
+        |   |   `-- filesystem-policy.json
         |   |-- main.tf                           リソース定義ファイル
         |   |-- output.tf                         リソース戻り値定義ファイル
         |   `-- variable.tf                       変数定義ファイル
