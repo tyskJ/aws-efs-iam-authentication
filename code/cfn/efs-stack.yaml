@@ -438,13 +438,13 @@ Resources:
     Properties:
       FileSystemId: !Ref Efs
       PosixUser:
-        Uid: "1001"
-        Gid: "1001"
+        Uid: "1500"
+        Gid: "1500"
       RootDirectory:
         Path: "/App"
         CreationInfo:
-          OwnerUid: "1001"
-          OwnerGid: "1001"
+          OwnerUid: "1500"
+          OwnerGid: "1500"
           Permissions: "0755"
       AccessPointTags:
         - Key: Name
