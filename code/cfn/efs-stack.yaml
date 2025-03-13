@@ -391,6 +391,38 @@ Resources:
       FileSystemTags:
         - Key: Name
           Value: efs-filesystem
+      FileSystemPolicy:
+        {
+          "Version": "2012-10-17",
+          "Statement":
+            [
+              {
+                "Sid": "AllowEFSAccess",
+                "Effect": "Allow",
+                "Principal": { "AWS": { "Fn::GetAtt": ["Role", "Arn"] } },
+                "Action":
+                  [
+                    "elasticfilesystem:ClientRootAccess",
+                    "elasticfilesystem:ClientWrite",
+                    "elasticfilesystem:ClientMount",
+                  ],
+                "Resource": "*",
+                "Condition":
+                  {
+                    "Bool":
+                      { "elasticfilesystem:AccessedViaMountTarget": "true" },
+                  },
+              },
+              {
+                "Sid": "DenyNotTls",
+                "Effect": "Deny",
+                "Principal": { "AWS": "*" },
+                "Action": "*",
+                "Resource": "*",
+                "Condition": { "Bool": { "aws:SecureTransport": "false" } },
+              },
+            ],
+        }
 
   MntTarget:
     Type: AWS::EFS::MountTarget
