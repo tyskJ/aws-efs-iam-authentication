@@ -3,6 +3,7 @@ import { Construct } from "constructs";
 import { Parameter } from "../../parameter";
 import { Network } from "../construct/network";
 import { Iam } from "../construct/iam";
+import { Kms } from "../construct/kms";
 
 export class CdkAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: Parameter) {
@@ -26,6 +27,11 @@ export class CdkAppStack extends cdk.Stack {
     // IAM
     const iam = new Iam(this, "Iam", {
       ec2Role: props.ec2Role,
+    });
+
+    // KMS
+    const kms = new Kms(this, "Kms", {
+      efsCmk: props.efsCmk,
     });
   }
 }
