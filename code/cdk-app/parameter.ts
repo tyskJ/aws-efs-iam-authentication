@@ -115,6 +115,7 @@ export type ec2Info = {
   id: string;
   instanceType: string;
   deviceName: string;
+  amiId: string;
   subnetKey: subnetKey;
   apiTerm: boolean;
   ebsOpt: boolean;
@@ -288,6 +289,7 @@ export const devParameter: Parameter = {
     id: "EC2Instance",
     instanceType: "t3.large",
     deviceName: "/dev/xvda",
+    amiId: "ami-0a290015b99140cd1",
     subnetKey: "public-a",
     apiTerm: false,
     ebsOpt: false,
