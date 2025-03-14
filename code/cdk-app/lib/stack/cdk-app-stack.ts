@@ -5,6 +5,7 @@ import { Network } from "../construct/network";
 import { Iam } from "../construct/iam";
 import { Kms } from "../construct/kms";
 import { Ec2 } from "../construct/ec2";
+import { Efs } from "../construct/efs";
 
 export class CdkAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: Parameter) {
@@ -43,6 +44,14 @@ export class CdkAppStack extends cdk.Stack {
       subnets: nw.subnetObject,
       keyPair: props.keyPair,
       ec2: props.ec2,
+    });
+
+    // EFS
+    const efs = new Efs(this, "Efs", {
+      efsSg: nw.efsSg,
+      efsCmk: kms.CmkEfs,
+      ec2Role: iam.ec2Role,
+      subnets: nw.subnetObject,
     });
   }
 }
